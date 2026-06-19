@@ -1,0 +1,17 @@
+{
+  "name": "Python Codespace",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+
+  // Install extra Python packages here if you like:
+  "postCreateCommand": "pip install --upgrade pip",
+  // "postCreateCommand": "pip install --upgrade pip && pip install jupyter numpy pandas matplotlib",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python"
+        // NOTE: do NOT list GitHub Copilot or other AI extensions here
+      ]
+    }
+  }
+}
