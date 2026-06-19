@@ -10,9 +10,10 @@ the course codespace as follows:
 $ python3 grab1066.py m04b
 
 The input parameter (i.e., `m04b` in this example) should match the
-name of a public `cs1066` GitHub repo.  The script will place this unit's
-files in the `m04` subdirectory of the user's codespace, where `m04`
-stands for the course's Module 4.
+name of a public GitHub repo for this course.  The script will place
+this unit's files in the `m04` subdirectory of the user's codespace,
+where `m04` stands for the course's Module 4 and `b` is the module's
+second shard.
 
 If a subdirectory of the same name already exists, this script assumes
 that the user wants a new clean copy of the repo's files.  It will name
