@@ -24,6 +24,7 @@ Date: June 2026
 """
 
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -127,48 +128,51 @@ def move_files(repo, module):
     clean_needed = False
 
     # Process the unzipped files in zip_dir. If module doesn't yet
-    # exist, we rename zip_dir as module. If it does exist, we 
-    # process each file in zip_dir. We move a file to module if it
-    # doesn't already exist there. If it does exist in module, we
-    # move it to clean_dir (if this directory exists) or mark that
-    # we need to rename zip_dir as clean_dir.
+    # exist, we create it. The code moves a file if it doesn't already
+    # exist at the destination directory. If it does exist, we move it
+    # to clean_dir (if this directory exists) or mark that we need to
+    # zip_dir as clean_dir when we're done. NOTE: Classnotes are left
+    # in the clean_dir.
     if not os.path.exists(module):
-        # Module doesn't exist. Rename the zip_dir and be done.
-        my_rename(zip_dir, module)
-        print(f"... Renamed {zip_dir} to {module}")
-    else:
-        # Module exists. We must process each file.
-        for item in os.listdir(zip_dir):
-            src = os.path.join(zip_dir, item)
+        # Module doesn't exist. Create it.
+        os.mkdir(module)
+        print(f"... Created {module} folder")
+
+    for item in os.listdir(zip_dir):
+        src = os.path.join(zip_dir, item)
+
+        if re.match(r"^cn\d{2}\.ipynb$", item):
+            dst = os.path.join('classnotes', item)
+        else:
             dst = os.path.join(module, item)
 
-            if not os.path.exists(dst):
-                # No pre-existing src file in module. Move src to module.
-                my_rename(src, dst)
-                print(f"... Moved {src} to {dst}")
+        if not os.path.exists(dst):
+            # No pre-existing src file in module. Move src to module.
+            my_rename(src, dst)
+            print(f"... Moved {src} to {dst}")
 
-            elif clean_exists:
-                # If dst already exists and clean_dir exists, move src to clean_dir
-                dst_clean = os.path.join(clean_dir, item)
-                my_rename(src, dst_clean)
-                print(f"... Moved {src} to {dst_clean}")
+        elif clean_exists:
+            # If dst already exists and clean_dir exists, move src to clean_dir
+            dst_clean = os.path.join(clean_dir, item)
+            my_rename(src, dst_clean)
+            print(f"... Moved {src} to {dst_clean}")
 
-            else:
-                # Remember to move whatever remains in zip_dir to clean_dir after processing all files
-                clean_needed = True
-                print(f"... Not moving {src}")
-
-        if clean_needed:
-            # Move the remaining files in zip_dir to clean_dir
-            my_rename(zip_dir, clean_dir)
-            print(f"... Renamed {zip_dir} to {clean_dir}")
         else:
-            # Remove the now-empty zip_dir
-            try:
-                os.rmdir(zip_dir)
-                print(f"... Removed empty directory {zip_dir}")
-            except Exception as e:
-                sys.exit(f"ERROR removing directory {zip_dir}: {e}")
+            # Remember to move whatever remains in zip_dir to clean_dir after processing all files
+            clean_needed = True
+            print(f"... Not moving {src}")
+
+    if clean_needed:
+        # Move the remaining files in zip_dir to clean_dir
+        my_rename(zip_dir, clean_dir)
+        print(f"... Renamed {zip_dir} to {clean_dir}")
+    else:
+        # Remove the now-empty zip_dir
+        try:
+            os.rmdir(zip_dir)
+            print(f"... Removed empty directory {zip_dir}")
+        except Exception as e:
+            sys.exit(f"ERROR removing directory {zip_dir}: {e}")
 
 
 def main():
