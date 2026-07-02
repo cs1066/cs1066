@@ -1,4 +1,4 @@
-### cs1066-dev/utils/grab1066.py - VERSION 20260619
+### cs1066-dev/utils/grab1066.py - VERSION 20260702
 """
 This script simplifies the work a learner in one of my classes
 must do to grab the files needed for a course unit, which are
@@ -7,7 +7,7 @@ stored in a public GitHub repository.
 If a learner wants the files for `m04b`, they'd run this script in
 the course codespace as follows:
 
-$ python3 grab1066.py m04b
+$ python3 grab{COURSE_NUM}.py m04b
 
 The input parameter (i.e., `m04b` in this example) should match the
 name of a public GitHub repo for this course.  The script will place
@@ -27,23 +27,51 @@ import os
 import re
 import subprocess
 import sys
+from urllib import request, error
 import zipfile
+
+######
+###
+### COURSE-SPECIFIC CHANGES GO IN THIS BLOCK ONLY
+###
 
 # Course-specific global constants and configuration parameters
 COURSE_NUM = '1066'
 COURSE_NAME = f'cs{COURSE_NUM}'
 
-VALID_REPOS = ['m01'] \
-    + [f'm02{p}' for p in 'abcdefg'] \
-    + [f'm03{p}' for p in 'abcdefg'] \
-    + [f'm04{p}' for p in 'abcde'] \
-    + ['m05'] \
-    + [f'm07{p}' for p in 'abcdefghi']
-
 # Global constants and configuration parameters
 ORG_URL = f'https://github.com/{COURSE_NAME}/'
 CODESPACES_ROOT = f'/workspaces/{COURSE_NAME}'
 MAIN_ZIP_PATH = '/archive/refs/heads/main.zip'
+
+def determine_dst(module, item):
+    """Determine the destination directory for a given file item"""
+    # In CS1066, we move the classnotes files (cnXX.ipynb) into
+    # their own special directory.
+    if re.match(r"^cn\d{2}\.ipynb$", item):
+        return os.path.join('classnotes', item)
+    else:
+        return os.path.join(module, item)
+
+###
+### END COURSE-SPECIFIC CHANGES
+###
+######
+
+
+def repo_exists(repo: str, timeout: float = 10.0):
+    """Used to check if a repo exists with this url"""
+    url = ORG_URL + repo + MAIN_ZIP_PATH
+    req = request.Request(url, method="HEAD")
+    try:
+        with request.urlopen(req, timeout=timeout) as resp:
+            return 200 <= resp.status < 400
+    except error.HTTPError as e:
+        # e.code will have the HTTP status (404, 403, etc.)
+        return False
+    except error.URLError:
+        # DNS failure, refused connection, etc.
+        return False
 
 
 def validate_working_dir():
@@ -131,20 +159,17 @@ def move_files(repo, module):
     # exist, we create it. The code moves a file if it doesn't already
     # exist at the destination directory. If it does exist, we move it
     # to clean_dir (if this directory exists) or mark that we need to
-    # zip_dir as clean_dir when we're done. NOTE: Classnotes are left
-    # in the clean_dir.
+    # zip_dir as clean_dir when we're done. Some files are have special
+    # handling.
     if not os.path.exists(module):
         # Module doesn't exist. Create it.
         os.mkdir(module)
         print(f"... Created {module} folder")
 
+    # Process each file in zip_dir
     for item in os.listdir(zip_dir):
         src = os.path.join(zip_dir, item)
-
-        if re.match(r"^cn\d{2}\.ipynb$", item):
-            dst = os.path.join('classnotes', item)
-        else:
-            dst = os.path.join(module, item)
+        dst = determine_dst(module, item)
 
         if not os.path.exists(dst):
             # No pre-existing src file in module. Move src to module.
@@ -183,7 +208,7 @@ def main():
     repo = sys.argv[1]
 
     # Check validity of input parameter and gracefully handle bad parameters
-    if repo not in VALID_REPOS:
+    if not repo_exists(repo):
         sys.exit(f"ERROR: {repo} is not valid; did you mistype it?")
 
     # Start alerting the user to our progress
