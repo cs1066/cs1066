@@ -2,9 +2,13 @@
   "name": "Python Codespace",
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
 
-  // Install extra Python packages here if you like:
+  // Extra Python packages are installed by postCreate
   "postCreateCommand": "pip install --upgrade pip",
+  // "postCreateCommand": "bash .devcontainer/post_create.sh",
   // "postCreateCommand": "pip install --upgrade pip && pip install jupyter numpy pandas matplotlib",
+
+  // Fix the prompt on every restart
+  // "postStartCommand": "echo 'export PS1=\"\\w$ \"' >> ~/.bashrc",
 
   "customizations": {
     "vscode": {
